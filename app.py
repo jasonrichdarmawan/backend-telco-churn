@@ -49,16 +49,30 @@ def predict():
     
     # guard clause
     if fetch_customer_data == True:
-        return data.to_json()
+        return data.to_json(orient='records')
     else:
-        return data[['customerID', 'Churn']].to_json()
+        return data[['customerID', 'Churn']].to_json(orient='records')
     
 @app.route('/query', methods=['GET'])
 def query():
     """
     simulation for Exploratory Data Analysis.
     """
-    return db.to_json()
+    return db.to_json(orient='records')
+
+@app.route('/proactive', methods=['GET'])
+def proactive():
+    data = db.sample(10)
+    
+    X_final = prep.transform(X=data)
+    
+    y_pred_proba = model.predict(x=X_final)
+    
+    y_pred = np.where(y_pred_proba >= 0.3, 'Yes', 'No')
+    
+    data['Churn'] = y_pred
+    
+    return data.loc[data['Churn'] == 'Yes'].to_json(orient='records')
     
 # when the appy is deploy, the __name__ is app instead of __main__
 if __name__ == '__main__':
