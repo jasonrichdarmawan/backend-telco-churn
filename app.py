@@ -19,6 +19,7 @@ model = load_model(
 
 # Database simulation
 db = pd.read_csv('./db/WA_Fn-UseC_-Telco-Customer-Churn.csv')
+db['TotalCharges'] = pd.to_numeric(db['TotalCharges'], errors='coerce')
     
 # App Initialization
 app = Flask(__name__)
@@ -62,7 +63,20 @@ def query():
 
 @app.route('/proactive', methods=['GET'])
 def proactive():
-    data = db.sample(10)
+    data = db.loc[
+        (db['Contract'] != 'Month-to-month') |
+        (db['tenure'] >= 50) |
+        (db['TechSupport'] != 'No') |
+        (db['OnlineSecurity'] != 'No') |
+        (db['InternetService'] == 'No') |
+        (db['OnlineBackup'] != 'No') |
+        (db['TotalCharges'] >= 4000) |
+        (db['PaymentMethod'].isin(['Bank transfer (automatic)', 'Credit card (automatic)'])) |
+        (db['DeviceProtection'] != 'No') |
+        (db['MonthlyCharges'] < 40) |
+        (db['StreamingTV'] != 'No') |
+        (db['StreamingMovies'] != 'No')
+    ].sample(10)
     
     X_final = prep.transform(X=data)
     
